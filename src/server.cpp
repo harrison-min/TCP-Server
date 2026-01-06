@@ -15,40 +15,33 @@
 //socket
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 
 int main() {
-    int serverSocket = -1;
-    serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+    int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
 
     printf ("\n File Descriptor: %d\n", serverSocket);
 
 
-    // // specifying the address
-    // sockaddr_in serverAddress;
-    // serverAddress.sin_family = AF_INET;
-    // serverAddress.sin_port = htons(8080);
-    // serverAddress.sin_addr.s_addr = INADDR_ANY;
+    // specifying the address
+    sockaddr_in serverAddress;
+    serverAddress.sin_family = AF_INET;
+    serverAddress.sin_port = htons(8080);
+    inet_pton(AF_INET, "127.0.0.1", &serverAddress.sin_addr);
 
-    // // binding socket.
-    // bind(serverSocket, (struct sockaddr*)&serverAddress,
-    //      sizeof(serverAddress));
+    // binding socket.
+    bind(serverSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress));
 
-    // // listening to the assigned socket
-    // listen(serverSocket, 5);
+    // listening to the assigned socket
+    listen(serverSocket, 5);
 
-    // // accepting connection request
-    // int clientSocket
-    //     = accept(serverSocket, nullptr, nullptr);
+    // accepting connection request
+    int clientSocket = accept(serverSocket, nullptr, nullptr);
 
-    // // recieving data
-    // char buffer[1024] = { 0 };
-    // recv(clientSocket, buffer, sizeof(buffer), 0);
-    // cout << "Message from client: " << buffer
-    //           << endl;
-
-    // // closing the socket.
-    // close(serverSocket);
-
+    // recieving data
+    char buffer[1024] = { 0 };
+    recv(clientSocket, buffer, sizeof(buffer), 0);
+    std::cout << "Message from client: " << buffer << std::endl;
 
     return 0;
 
