@@ -1,27 +1,9 @@
-#include <string>
-#include <memory>
-#include <iostream>
-#include <vector>
-#include <stdexcept>
-#include <thread>
-#include <fstream>
-
-//openssl
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-#include <openssl/evp.h>
-#include <openssl/rand.h>
-
-//socket
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
+#include "OpenSSLModule.hpp"
 
 int main() {
     int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
 
     printf ("\n File Descriptor: %d\n", serverSocket);
-
 
     // specifying the address
     sockaddr_in serverAddress;
@@ -41,7 +23,7 @@ int main() {
     // recieving data
     char buffer[1024] = { 0 };
     recv(clientSocket, buffer, sizeof(buffer), 0);
-    std::cout << "Message from client: " << buffer << std::endl;
+    std::cerr << "Message from client: " << buffer << std::endl;
 
     return 0;
 
