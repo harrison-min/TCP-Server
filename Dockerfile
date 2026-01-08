@@ -5,7 +5,7 @@ RUN apk add --no-cache g++
 COPY src/ /src/
 COPY certs/ /certs/
 RUN g++ /src/server.cpp /src/OpenSSLModule.cpp -o /server -lssl -lcrypto
-RUN g++ src/client.cpp /src/OpenSSLModule.cpp -o client -lssl -lcrypto
+RUN g++ /src/client.cpp /src/OpenSSLModule.cpp -o client -lssl -lcrypto
 
 # Docker commands
 # To build: docker build -t tcp-server .
