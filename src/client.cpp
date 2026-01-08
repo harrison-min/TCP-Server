@@ -1,6 +1,7 @@
 #include "OpenSSLModule.hpp"
 
 int main() {
+    SSLClient myClient;
     // creating socket
     int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
 

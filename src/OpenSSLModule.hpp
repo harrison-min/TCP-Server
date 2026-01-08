@@ -18,3 +18,23 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+
+class SSLClient {
+    private: 
+        SSL_CTX * ctx;
+        void createSSLCTX();
+        void loadCerts();
+    public: 
+        SSLClient();
+        ~SSLClient();
+};
+
+class SSLServer {
+    private: 
+        SSL_CTX * ctx;
+        void createSSLCTX();
+        void loadCerts();
+    public:
+        SSLServer();
+        ~SSLServer();
+};

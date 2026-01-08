@@ -1,6 +1,7 @@
 #include "OpenSSLModule.hpp"
 
 int main() {
+    SSLServer myServer;
     int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
 
     printf ("\n File Descriptor: %d\n", serverSocket);
