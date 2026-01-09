@@ -1,9 +1,8 @@
-#include "OpenSSLModule.hpp"
+#include "openSSLModule.hpp"
 
 int main() {
     SSLClient myClient;
-    std::cerr<< myClient.read()<<std::endl;
+    std::cerr<< myClient.read();
     myClient.write("Hello from client!");
-
     return 0;
 }

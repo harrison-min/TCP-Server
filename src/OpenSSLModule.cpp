@@ -1,4 +1,4 @@
-#include "OpenSSLModule.hpp"
+#include "openSSLModule.hpp"
 
 class OpenSSLInitializer {
     public:
@@ -46,14 +46,13 @@ void SSLServer::loadCerts () {
         throw std::runtime_error( "Failed to load the server certificate chain file");
     }
 
-    if (SSL_CTX_use_PrivateKey_file(ctx, "../certs/server_key.pem", SSL_FILETYPE_PEM) <= 0) {
+    if (SSL_CTX_use_PrivateKey_file(ctx, "../certs/server_key_unencrypted.pem", SSL_FILETYPE_PEM) <= 0) {
         throw std::runtime_error( "Failed to load the server private key file");
     }
 
     if (SSL_CTX_check_private_key(ctx) == 0) {
         throw std::runtime_error("Server private key does not match the certificate");
     }
-
 
     if (SSL_CTX_load_verify_locations(ctx, "../certs/client_cert.pem", nullptr) <= 0) {
         throw std::runtime_error( "Failed to load the client verify file");
@@ -74,7 +73,7 @@ void SSLServer::createBIO() {
     }
 
     if (BIO_do_accept(acceptorBIO) <= 0) {
-        throw std::runtime_error( "Error setting up server accepter socket");
+        throw std::runtime_error( "Error accepting the client");
     }
 
     clientBIO = BIO_pop(acceptorBIO);
@@ -102,6 +101,7 @@ SSLServer::SSLServer ():
     loadCerts();
     //choose to enable caching if needed
     SSL_CTX_set_verify (ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, nullptr);
+    
 
     createBIO();
     createSSL();
@@ -178,7 +178,7 @@ void SSLClient::connectBIO() {
     if (bio == nullptr) {
         throw std::runtime_error("Error in creating SSL BIO");
     }
-    BIO_set_conn_hostname(bio, "127.0.0.1:12345");
+    BIO_set_conn_hostname(bio, "tcp-server:12345");
 
     if(BIO_do_connect(bio) <= 0) {
        throw std::runtime_error ("Error in connecting to server");

@@ -12,21 +12,31 @@
 services:
     database:
         image: postgres:latest
-        ports: 
-            - "5432:5432"
-        environment:
-            POSTGRES_USER: me
-            POSTGRES_PASSWORD: password
-            POSTGRES_DB: test
+        env_file: "secrets.env"
         volumes: 
             - pgdata:/var/lib/postgresql
+        networks:
+            - backEndTest
 
     tcp-server:
         build: .
         image: tcp-server
         depends_on:
             - database
+        env_file: 
+            - secrets.env
         command: ["/server"]
+        networks: 
+            - backEndTest
+            - frontEndTest
+    
+
 volumes:
     pgdata:
+
+networks: 
+    backEndTest: 
+        external: true 
+    frontEndTest: 
+        external: true
         

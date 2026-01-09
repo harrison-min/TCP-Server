@@ -1,3 +1,7 @@
+secrets.env
+
 certs/
 *.key
 *.crt
+*.pem
+*.p12
