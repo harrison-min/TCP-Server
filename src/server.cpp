@@ -3,18 +3,13 @@
 
 int main() {
     pgConnection myPostgres;
-    std::vector<std::vector<std::string>> data = myPostgres.getData("SELECT * FROM testTable");
 
-    for (size_t i = 0; i <data.size(); i ++) {
-        for (size_t j = 0; j < data[i].size(); j ++) {
-            std::cerr << data[i][j]<< "\t";
-        }
-        std::cerr << std::endl;
-    }
+    int64_t newFolderID = myPostgres.insertFolder("myTestFolder", 1);
+    myPostgres.deleteFolder(newFolderID);
 
     SSLServer myServer;
     myServer.write("Hello from server!");
-    std::cerr<< myServer.read();
+    std::cerr<< myServer.read() <<std::endl;
 
     return 0;
 }

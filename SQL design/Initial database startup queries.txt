@@ -1,0 +1,16 @@
+CREATE TABLE data (
+id BIGSERIAL  PRIMARY KEY,
+loID OID NOT NULL,
+parentFolder BIGINT REFERENCES folder(id) ON DELETE CASCADE,
+size BIGINT NOT NULL,
+created TIMESTAMPTZ DEFAULT now(),
+name TEXT NOT NULL
+);
+
+ALTER TABLE data ADD CONSTRAINT unique_name_per_folder UNIQUE(parentFolder, name);
+
+CREATE TABLE folder (
+id BIGSERIAL  PRIMARY KEY, 
+name text UNIQUE NOT NULL,
+parentFolder BIGINT REFERENCES folder(id) ON DELETE CASCADE
+);
