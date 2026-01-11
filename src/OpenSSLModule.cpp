@@ -1,4 +1,8 @@
 #include "openSSLModule.hpp"
+#include <iostream>
+#include <vector>
+#include <stdexcept>
+
 
 class OpenSSLInitializer {
     public:
@@ -101,7 +105,6 @@ SSLServer::SSLServer ():
     loadCerts();
     //choose to enable caching if needed
     SSL_CTX_set_verify (ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, nullptr);
-    
 
     createBIO();
     createSSL();
@@ -130,9 +133,13 @@ std::string SSLServer::read() {
 }
 
 void SSLServer::write(const std::string &msg) {
-    int n = SSL_write(ssl, msg.data(), msg.size());
-    if (n<= 0) {
-        throw std::runtime_error ("Server SSL write failed");
+    size_t totalBytesWritten =0;
+    while(totalBytesWritten<msg.size()) {
+        int n = SSL_write(ssl, msg.data() +totalBytesWritten, msg.size() - totalBytesWritten);
+        if (n<= 0) {
+            throw std::runtime_error ("Server SSL write failed");
+        }
+        totalBytesWritten += n;
     }
 }
 
@@ -220,8 +227,12 @@ std::string SSLClient::read() {
 }
 
 void SSLClient::write(const std::string &msg) {
-    int n = BIO_write (bio, msg.data (), msg.size());
-    if (n<= 0) {
-        throw std::runtime_error("Client BIO write failed");
+    size_t totalBytesWritten =0;
+    while(totalBytesWritten<msg.size()) {
+        int n = BIO_write (bio, msg.data () + totalBytesWritten, msg.size() - totalBytesWritten);
+        if (n<= 0) {
+            throw std::runtime_error("Client BIO write failed");
+        }
+        totalBytesWritten += n;
     }
 }

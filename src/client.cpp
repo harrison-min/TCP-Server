@@ -1,4 +1,5 @@
 #include "openSSLModule.hpp"
+#include <iostream>
 
 int main() {
     SSLClient myClient;

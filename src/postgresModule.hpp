@@ -1,12 +1,7 @@
 #pragma once
 
 #include <string>
-#include <memory>
-#include <iostream>
 #include <vector>
-#include <stdexcept>
-#include <thread>
-#include <fstream>
 
 
 #include <postgresql/libpq-fe.h>

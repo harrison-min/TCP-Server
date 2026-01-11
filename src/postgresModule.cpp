@@ -1,5 +1,7 @@
 #include "postgresModule.hpp"
-
+#include <iostream>
+#include <stdexcept>
+#include <fstream>
 
 pgConnection::pgConnection():
     conn {nullptr} {

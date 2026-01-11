@@ -1,12 +1,6 @@
 #pragma once
 
 #include <string>
-#include <memory>
-#include <iostream>
-#include <vector>
-#include <stdexcept>
-#include <thread>
-#include <fstream>
 
 //openssl
 #include <openssl/ssl.h>
