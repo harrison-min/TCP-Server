@@ -1,9 +1,7 @@
-#include "requestHandler.hpp"
-#include <string>
+#include "requestSender.hpp"
+#include "openSSLModule.hpp"
 #include <iostream>
-#include <stdexcept>
-#include <vector>
-
+#include <string>
 
 // Message framing
 /*
@@ -13,18 +11,18 @@ ex: 31|Upload|FileSize:1496,name:1234|
 ex: 16|ShowAllFolders||
 */
 
+std::string requestSender::createMessage(std::string operation, std::string metadata) {
+    std::string delimiter = "|";
 
-requestHandler::requestHandler(SSLServer &sslRef, pgConnection &pgRef) :
-    ssl {sslRef}, pg {pgRef} {
-        ssl.write ("Hello from Server!");
-        std::cerr<< ssl.read () << std::endl;
-    }
+    std::string payload = operation + delimiter + metadata + delimiter;
 
-requestHandler::~requestHandler() {
-    //nothing yet to deconstruct
+    size_t payloadSize = payload.size();
+    std::string message = std::to_string(payloadSize) + delimiter + payload;
+
+    return message;
 }
 
-std::vector<std::string> requestHandler::recieveMessage() {
+std::vector<std::string> requestSender::recieveMessage() {
     std::string buffer;
     char delimiter = '|';
     while (buffer.find(delimiter) == std::string::npos) {
@@ -49,17 +47,17 @@ std::vector<std::string> requestHandler::recieveMessage() {
     return {operation, metadata};
 }
 
-std::string requestHandler::createMessage(std::string operation, std::string metadata) {
-
-    std::string payload = operation + "|" + metadata + "|";
-
-    size_t payloadSize = payload.size();
-    std::string message = std::to_string(payloadSize) + "|" + payload;
-
-    return message;
-}
-
-void requestHandler::sendMessage (std::string operation, std::string metadata) {
+void requestSender::sendMessage (std::string operation, std::string metadata) {
     std::string message = createMessage(operation, metadata);
     ssl.write(message);
+}
+
+requestSender::requestSender(SSLClient & clientRef):
+    ssl{clientRef} {
+        std::cerr << ssl.read() << "\n";
+        ssl.write("Hello from client!");
+}
+
+requestSender::~requestSender() {
+    //nothing to deconstruct yet
 }

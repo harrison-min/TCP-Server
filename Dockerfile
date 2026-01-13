@@ -8,7 +8,7 @@ COPY src/ /src/
 COPY certs/ /certs/
 COPY test/ /test/
 RUN g++ /src/server.cpp /src/openSSLModule.cpp /src/postgresModule.cpp /src/requestHandler.cpp -o server -lssl -lcrypto -lpq
-RUN g++ /src/client.cpp /src/openSSLModule.cpp /src/postgresModule.cpp -o client -lssl -lcrypto -lpq
+RUN g++ /src/client.cpp /src/openSSLModule.cpp /src/postgresModule.cpp /src/requestSender.cpp -o client -lssl -lcrypto -lpq
 RUN chafa test/test.png
 # Docker commands
 # To build: docker build -t tcp-server .

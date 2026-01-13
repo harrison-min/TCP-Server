@@ -1,19 +1,16 @@
 #pragma once
 
 #include "openSSLModule.hpp"
-#include "postgresModule.hpp"
 #include <string>
 #include <vector>
 
-class requestHandler {
+class requestSender {
     private:
-        SSLServer &ssl;
-        pgConnection & pg;
+        SSLClient & ssl;
         std::string createMessage(std::string operation, std::string metadata);
     public:
-        requestHandler (SSLServer &sslRef, pgConnection &pgRef);
-        ~requestHandler ();
+        requestSender(SSLClient & clientRef);
+        ~requestSender();
         std::vector<std::string> recieveMessage();
         void sendMessage (std::string operation, std::string metadata);
-
 };
