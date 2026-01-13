@@ -5,12 +5,8 @@
 int main() {
     SSLClient myClient;
     requestSender sender (myClient);
-    sender.sendMessage("testOperation","someMetadataHere");
-    std::vector<std::string> message = sender.recieveMessage();
+    sender.sendMessage("Get Files in Folder","folder:1");
+    sender.recieveMessage();
 
-    std::cerr<< "Operation: " << message[0] << std::endl;
-    std::cerr <<"Metadata: " << message[1] << std::endl; 
-
-    
     return 0;
 }

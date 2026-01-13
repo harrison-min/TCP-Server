@@ -7,13 +7,9 @@ int main() {
     SSLServer myServer;
     pgConnection myPostgres;
     requestHandler handler (myServer, myPostgres);
-    
-    std::vector<std::string> message = handler.recieveMessage();
 
-    std::cerr<< "Operation: " << message[0] << std::endl;
-    std::cerr <<"Metadata: " << message[1] << std::endl; 
-
-    handler.sendMessage("MessageRecieved", "");
+    std::vector<std::string> payload = handler.recieveMessage();
+    handler.handlePayload(payload);
 
     return 0;
 }

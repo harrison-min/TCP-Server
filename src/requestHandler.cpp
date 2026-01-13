@@ -24,6 +24,7 @@ requestHandler::~requestHandler() {
     //nothing yet to deconstruct
 }
 
+
 std::vector<std::string> requestHandler::recieveMessage() {
     std::string buffer;
     char delimiter = '|';
@@ -46,6 +47,9 @@ std::vector<std::string> requestHandler::recieveMessage() {
     buffer.erase (0, buffer.find(delimiter) + 1);
     std::string metadata = buffer.substr(0, buffer.find(delimiter));
 
+    std::cerr<< "Recieved operation: " + operation << std::endl;
+    std::cerr<< "Recieved metadata: " + metadata << std::endl;
+
     return {operation, metadata};
 }
 
@@ -58,6 +62,58 @@ std::string requestHandler::createMessage(std::string operation, std::string met
 
     return message;
 }
+std::string requestHandler::pgDataToString (std::vector<std::vector<std::string>> data) {
+    std::string outputString;
+    for (size_t i = 0; i <data.size(); i ++) {
+        for (size_t j = 0; j < data[i].size(); j ++) {
+            outputString += data[i][j];
+            outputString += ", ";
+        }
+        
+        outputString += "\n";
+    }
+
+    return outputString;
+}
+
+
+std::string requestHandler::getFilesInFolder (std::string metadata) {
+    //expected metadata in the form of "folderID:____"
+    
+    size_t pos = metadata.find(':'); 
+    if (pos == std::string::npos) { 
+        return "INVALID METADATA"; 
+    }
+    std::string folderID = metadata.substr(metadata.find(':') + 1);
+
+    for (auto ch : folderID) {
+        if (std::isdigit(static_cast<unsigned char>(ch)) == false) {
+            return "INVALID METADATA";
+        }
+    }
+
+    std::string query = "SELECT name FROM data WHERE parentfolder = " + folderID +";";
+
+    std::vector<std::vector<std::string>> data = pg.sendQuery (query);
+
+    std::string result = pgDataToString (data);
+
+    return result;
+}
+
+
+void requestHandler::handlePayload(std::vector<std::string> payload) {
+    std::string operation = payload[0];
+
+    if (operation == "Get Files in Folder") {
+        std::string result = getFilesInFolder (payload[1]);
+        sendMessage("Result: ", result);
+    } else {
+        sendMessage ("Invalid Operation", "");
+    }
+
+}
+
 
 void requestHandler::sendMessage (std::string operation, std::string metadata) {
     std::string message = createMessage(operation, metadata);

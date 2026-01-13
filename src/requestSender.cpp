@@ -44,6 +44,9 @@ std::vector<std::string> requestSender::recieveMessage() {
     buffer.erase (0, buffer.find(delimiter) + 1);
     std::string metadata = buffer.substr(0, buffer.find(delimiter));
 
+    std::cerr<< "Recieved operation: " + operation << std::endl;
+    std::cerr<< "Recieved metadata: " + metadata << std::endl;
+
     return {operation, metadata};
 }
 
@@ -61,3 +64,4 @@ requestSender::requestSender(SSLClient & clientRef):
 requestSender::~requestSender() {
     //nothing to deconstruct yet
 }
+
