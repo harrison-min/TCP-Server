@@ -25,7 +25,7 @@ requestHandler::~requestHandler() {
 }
 
 
-std::vector<std::string> requestHandler::recieveMessage() {
+std::vector<std::string> requestHandler::receiveMessage() {
     std::string buffer;
     char delimiter = '|';
     while (buffer.find(delimiter) == std::string::npos) {
@@ -47,8 +47,8 @@ std::vector<std::string> requestHandler::recieveMessage() {
     buffer.erase (0, buffer.find(delimiter) + 1);
     std::string metadata = buffer.substr(0, buffer.find(delimiter));
 
-    std::cerr<< "Recieved operation: " + operation << std::endl;
-    std::cerr<< "Recieved metadata: " + metadata << std::endl;
+    std::cerr<< "Received operation: " + operation << std::endl;
+    std::cerr<< "Received metadata: " + metadata << std::endl;
 
     return {operation, metadata};
 }
@@ -84,7 +84,7 @@ std::string requestHandler::getFilesInFolder (std::string metadata) {
     if (pos == std::string::npos) { 
         return "INVALID METADATA"; 
     }
-    std::string folderID = metadata.substr(metadata.find(':') + 1);
+    std::string folderID = metadata.substr(pos + 1);
 
     for (auto ch : folderID) {
         if (std::isdigit(static_cast<unsigned char>(ch)) == false) {
@@ -101,13 +101,64 @@ std::string requestHandler::getFilesInFolder (std::string metadata) {
     return result;
 }
 
+std::string requestHandler::fileUpload(std::string metadata) {
+    //parse metadata: name:____,folderID:____,size:____
+    size_t pos = metadata.find(':'); 
+    if (pos == std::string::npos) { 
+        return "INVALID METADATA"; 
+    }
+
+    std::string name = metadata.substr(pos + 1, metadata.find(',') - (pos+1));
+
+    metadata.erase(0, metadata.find(',')+1);
+
+    pos = metadata.find(':'); 
+    std::string folderID = metadata.substr(pos + 1, metadata.find(',') - (pos+1));
+
+    metadata.erase(0, metadata.find(',') + 1);
+
+    pos = metadata.find(':'); 
+    size_t fileSize = std::strtoull(metadata.substr(pos + 1).c_str(), nullptr, 10); 
+ 
+    size_t bytesRead = 0;
+
+    pg.beginPGOperation();
+    try {
+        int fd = pg.createNewLargeObject(name, folderID, fileSize);
+
+        sendMessage("Upload Ready","");
+
+        while (bytesRead<fileSize) {
+            std::string chunk = ssl.read();
+
+            if (chunk.empty()) { 
+                throw std::runtime_error("Client disconnected during upload"); 
+            }
+
+            bytesRead += chunk.size();
+            pg.writeToLargeObject(chunk, fd);
+        }
+
+        pg.closeLargeObject(fd);
+
+        pg.commitPGOperation();
+    } catch (...){
+        pg.rollbackPGOperation();
+        throw;
+    }
+    return "Successful Upload";
+}
+    
 
 void requestHandler::handlePayload(std::vector<std::string> payload) {
     std::string operation = payload[0];
 
     if (operation == "Get Files in Folder") {
         std::string result = getFilesInFolder (payload[1]);
-        sendMessage("Result: ", result);
+        sendMessage("Result", result);
+    } else if (operation == "File Upload") {
+        std::string result = fileUpload (payload[1]);
+        sendMessage ("Result", result);
     } else {
         sendMessage ("Invalid Operation", "");
     }

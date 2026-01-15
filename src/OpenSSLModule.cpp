@@ -27,10 +27,12 @@ class OpenSSLInitializer {
 };
 
 static OpenSSLInitializer openssl;
-
+static int readBufferSize = 16384;
 // ==================================================================================================================
 //SSL Server implementation
 // ==================================================================================================================
+
+
 void SSLServer::createSSLCTX () {
     ctx = SSL_CTX_new (TLS_server_method());
     if (ctx == nullptr) {
@@ -124,7 +126,7 @@ SSLServer::~SSLServer () {
 }
 
 std::string SSLServer::read() {
-    char buffer [4096] = {0};
+    char buffer [readBufferSize] = {0};
     int n = SSL_read(ssl, buffer, sizeof(buffer));
     if (n<= 0) {
         throw std::runtime_error ("Server SSL read failed");
@@ -218,7 +220,7 @@ SSLClient::~SSLClient () {
 }
 
 std::string SSLClient::read() {
-    char buffer [4096] = {0};
+    char buffer [readBufferSize] = {0};
     int n = BIO_read(bio, buffer, sizeof(buffer));
     if (n<=0) {
         throw std::runtime_error("Client BIO read failed");

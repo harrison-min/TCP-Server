@@ -87,6 +87,55 @@ void pgConnection::deleteFolder(int64_t id) {
     displayResponse(response); 
 }
 
+int pgConnection::createNewLargeObject (std::string fileName, std::string parentFolderID, size_t fileSize) {
+    Oid newOID = lo_create(conn, InvalidOid);
+    if (newOID == 0) {
+        throw std::runtime_error("Failed to create a new large object");
+    }
+
+    int loDescriptor = lo_open(conn, newOID, INV_WRITE);
+    if (loDescriptor<0) {
+        throw std::runtime_error("Failed to open large object");
+    }
+
+    std::string query = "INSERT INTO data (loID, parentFolder, size, name) VALUES (" +
+            std::to_string(newOID) + ", " + parentFolderID + ", " + 
+            std::to_string(fileSize) + ", '" + fileName + "') RETURNING id;";
+        
+    std::vector<std::vector<std::string>> response = sendQuery(query);
+    displayResponse(response);
+
+    return loDescriptor;
+}
+
+void pgConnection::writeToLargeObject (std::string & buffer, int loDescriptor) {
+    size_t totalBytesWritten = 0;
+    
+    while (totalBytesWritten<buffer.size()) {
+        int writtenBytes = lo_write(conn, loDescriptor, buffer.data()+totalBytesWritten, buffer.size()-totalBytesWritten);
+        if (writtenBytes< 0) {
+            throw std::runtime_error("Failed to write to Large object");
+        }
+        totalBytesWritten += writtenBytes;
+    }
+}
+
+void pgConnection::closeLargeObject (int loDescriptor) {
+    lo_close(conn, loDescriptor);
+}
+
+void pgConnection::beginPGOperation () {
+    PQexec(conn, "BEGIN");
+}
+
+void pgConnection::commitPGOperation () {
+    PQexec(conn, "COMMIT");
+}
+
+void pgConnection::rollbackPGOperation() {
+    PQexec(conn, "ROLLBACK");
+}
+
 void pgConnection::createNewFile (std::string fileName, std::string filePath, int64_t parentFolderID) {   
     PQexec(conn, "BEGIN");
     try {    
@@ -101,7 +150,7 @@ void pgConnection::createNewFile (std::string fileName, std::string filePath, in
         }
 
         int64_t fileSize = 0;
-        int bufferSize = 4096;
+        int bufferSize = 16384;
         char buffer [bufferSize];
 
         std::ifstream fs (filePath, std::ios::binary);

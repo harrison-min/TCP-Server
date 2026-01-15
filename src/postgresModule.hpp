@@ -21,4 +21,10 @@ class pgConnection {
         void deleteFolder(int64_t id);
         void createNewFile (std::string fileName, std::string filePath, int64_t parentFolderID);
         void deleteFile (int64_t fileID);
+        int createNewLargeObject (std::string fileName, std::string parentFolderID, size_t fileSize);
+        void writeToLargeObject (std::string & buffer, int loDescriptor);
+        void closeLargeObject (int loDescriptor);
+        void beginPGOperation (); 
+        void commitPGOperation (); 
+        void rollbackPGOperation(); 
 };

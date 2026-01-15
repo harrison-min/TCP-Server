@@ -5,8 +5,6 @@
 int main() {
     SSLClient myClient;
     requestSender sender (myClient);
-    sender.sendMessage("Get Files in Folder","folder:1");
-    sender.recieveMessage();
-
+    sender.uploadData("test/", "Docker Desktop Installer.exe", "1");
     return 0;
 }

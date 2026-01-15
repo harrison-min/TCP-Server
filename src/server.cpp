@@ -7,8 +7,7 @@ int main() {
     SSLServer myServer;
     pgConnection myPostgres;
     requestHandler handler (myServer, myPostgres);
-
-    std::vector<std::string> payload = handler.recieveMessage();
+    std::vector<std::string> payload = handler.receiveMessage();
     handler.handlePayload(payload);
 
     return 0;
