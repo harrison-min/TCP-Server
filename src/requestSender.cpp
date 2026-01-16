@@ -97,6 +97,40 @@ void requestSender::uploadData (std::string filePath, std::string fileName, std:
     receiveMessage();
 }
 
+void requestSender::downloadData (std::string destinationPath, std::string fileName, std::string parentFolder) {
+    sendMessage("File Download", "name:" + fileName + ", parentfolder:" + parentFolder);
+
+    std::vector<std::string> response = receiveMessage();
+    
+    if (response [0] != "Download Ready") {
+        return;
+    }
+
+    size_t fileSize = std::stoull(response[1].c_str());
+    
+    std::ofstream fs (destinationPath + fileName, std::ios::binary);
+    if (fs.is_open() == false) {
+        throw std::runtime_error("Failed to open file");
+    }
+
+    sendMessage("Download Ready", "");
+
+    size_t remaining = fileSize;
+
+    while (remaining>0)  {
+        std::string chunk = ssl.read();
+
+        fs.write(chunk.data(), chunk.size());
+        if (!fs) { 
+            throw std::runtime_error("File write failed"); 
+        }
+        remaining -= chunk.size();
+    }
+    fs.close();
+
+    receiveMessage();
+
+}
 
 requestSender::requestSender(SSLClient & clientRef):
     ssl{clientRef} {

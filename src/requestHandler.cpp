@@ -149,6 +149,61 @@ std::string requestHandler::fileUpload(std::string metadata) {
     return "Successful Upload";
 }
     
+std::string requestHandler::fileDownload (std::string metadata) {
+    //metadata framing:name:_____,parentfolder:_____
+    size_t pos = metadata.find(':'); 
+
+    std::string name = metadata.substr(pos + 1, metadata.find(',') - (pos+1));
+
+    metadata.erase(0, metadata.find(',')+1);
+
+    pos = metadata.find(':'); 
+    std::string folderID = metadata.substr(pos + 1, metadata.find(',') - (pos+1));
+
+
+    std::string query = "SELECT loID, size FROM data WHERE parentFolder =" + folderID + " AND name = '" + name + "';";
+    std::vector<std::vector<std::string>> result = pg.sendQuery (query);
+
+    std::string loID = result [0][0];
+    std::string fileSizeString = result [0][1];
+
+    sendMessage("Download Ready", fileSizeString);
+
+    std::vector<std::string> response = receiveMessage();
+
+    if (response [0] != "Download Ready") {
+        return "Download failed";
+    }
+
+    size_t fileSize = std::stoull(fileSizeString.c_str());
+    size_t totalBytesRead = 0;
+    std::cerr<< "loID: ["+ loID +"]\n";
+
+
+    pg.beginPGOperation();
+    try {
+        int fd = pg.openLOForReading (loID);
+
+        while (totalBytesRead < fileSize) {
+            std::string chunk = pg.readChunkFromLO (fd);
+            if (chunk.empty()) {
+                break;
+            }
+
+            totalBytesRead += chunk.size();
+            ssl.write(chunk);
+        }
+
+        pg.closeLargeObject (fd);
+        pg.commitPGOperation();
+    } catch (...){
+        pg.rollbackPGOperation();
+        throw;
+    }
+        
+    return "Download Success!";
+}
+
 
 void requestHandler::handlePayload(std::vector<std::string> payload) {
     std::string operation = payload[0];
@@ -158,6 +213,9 @@ void requestHandler::handlePayload(std::vector<std::string> payload) {
         sendMessage("Result", result);
     } else if (operation == "File Upload") {
         std::string result = fileUpload (payload[1]);
+        sendMessage ("Result", result);
+    } else if (operation == "File Download"){
+        std::string result = fileDownload(payload[1]);
         sendMessage ("Result", result);
     } else {
         sendMessage ("Invalid Operation", "");

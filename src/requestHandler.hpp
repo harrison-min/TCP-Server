@@ -13,6 +13,7 @@ class requestHandler {
         std::string pgDataToString (std::vector<std::vector<std::string>> data);
         std::string getFilesInFolder (std::string metadata);
         std::string fileUpload(std::string metadata);
+        std::string fileDownload (std::string metadata);
     public:
         requestHandler (SSLServer &sslRef, pgConnection &pgRef);
         ~requestHandler ();

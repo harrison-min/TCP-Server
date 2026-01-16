@@ -27,4 +27,6 @@ class pgConnection {
         void beginPGOperation (); 
         void commitPGOperation (); 
         void rollbackPGOperation(); 
+        int openLOForReading (std::string loID);
+        std::string readChunkFromLO (int fd);
 };

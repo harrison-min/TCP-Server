@@ -125,6 +125,7 @@ void pgConnection::closeLargeObject (int loDescriptor) {
 }
 
 void pgConnection::beginPGOperation () {
+
     PQexec(conn, "BEGIN");
 }
 
@@ -134,6 +135,28 @@ void pgConnection::commitPGOperation () {
 
 void pgConnection::rollbackPGOperation() {
     PQexec(conn, "ROLLBACK");
+}
+
+int pgConnection::openLOForReading (std::string loID) {
+
+    int loDescriptor = lo_open(conn, static_cast<uint32_t>(std::stoul(loID)), INV_READ);
+    if (loDescriptor < 0) {
+        throw std::runtime_error("Failed to open large object");
+    }
+
+    return loDescriptor;
+}
+
+std::string pgConnection::readChunkFromLO (int fd) {
+    size_t bufferSize = 16384;
+    char buffer [bufferSize];
+    
+    int bytesRead = lo_read(conn, fd, buffer, bufferSize);
+    if (bytesRead < 0) {
+        throw std::runtime_error("Failed to read large object");
+    }
+    
+    return std::string{buffer, static_cast<size_t>(bytesRead)};
 }
 
 void pgConnection::createNewFile (std::string fileName, std::string filePath, int64_t parentFolderID) {   

@@ -4,11 +4,13 @@
 #include <iostream>
 
 int main() {
-    SSLServer myServer;
     pgConnection myPostgres;
+    SSLServer myServer;
     requestHandler handler (myServer, myPostgres);
+    // myPostgres.deleteFile(9);
+    // std::vector<std::string> payload = handler.receiveMessage();
+    // handler.handlePayload(payload);
     std::vector<std::string> payload = handler.receiveMessage();
     handler.handlePayload(payload);
-
     return 0;
 }
