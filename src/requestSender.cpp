@@ -46,8 +46,7 @@ std::vector<std::string> requestSender::receiveMessage() {
     buffer.erase (0, buffer.find(delimiter) + 1);
     std::string metadata = buffer.substr(0, buffer.find(delimiter));
 
-    std::cerr<< "Received operation: " + operation << std::endl;
-    std::cerr<< "Received metadata: " + metadata << std::endl;
+    std::cerr<< "Operation: " + operation << std::endl;
 
     return {operation, metadata};
 }
@@ -130,6 +129,20 @@ void requestSender::downloadData (std::string destinationPath, std::string fileN
 
     receiveMessage();
 
+}
+
+void requestSender::deleteFile (std::string fileName, std::string parentFolder) {
+    sendMessage("Delete File", "name:" + fileName + ", parentfolder:" + parentFolder);
+
+    std::vector<std::string> response = receiveMessage();
+    std::cerr<< response[1] << "\n";
+}
+
+void requestSender::createFolder (std::string folderName, std::string parentFolder) {
+    sendMessage("Create Folder", "name:" + folderName + ", parentfolder:" + parentFolder);
+
+    std::vector<std::string> response = receiveMessage();
+    std::cerr<< response[1] << "\n";
 }
 
 requestSender::requestSender(SSLClient & clientRef):

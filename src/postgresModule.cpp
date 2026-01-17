@@ -65,18 +65,14 @@ void pgConnection::displayResponse (std::vector <std::vector<std::string>> data)
     }
 }
 
-int64_t pgConnection::insertFolder (std::string folderName,  int64_t parentID) {
-    std::string queryParentID = "NULL";
-    if (parentID>0) {
-        queryParentID = std::to_string(parentID);
-    }
-
-    std::string query = "INSERT INTO folder (name, parentFolder) VALUES ('" +  folderName + "', " + queryParentID + ") RETURNING id;";
+void pgConnection::insertFolder (std::string folderName, std::string parentID) {
+    std::string query = "INSERT INTO folder (name, parentFolder) VALUES ('" +  folderName + "', " + parentID + ") RETURNING id;";
     
     std::vector<std::vector<std::string>> response = sendQuery(query);
-    displayResponse(response); 
+    if (response.empty() || response [0].empty()) {
+        throw std::runtime_error ("SELECT response was empty");
+    }
 
-    return std::stoll(response[0][0]);
 }
 
 void pgConnection::deleteFolder(int64_t id) {

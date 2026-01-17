@@ -76,7 +76,6 @@ std::string requestHandler::pgDataToString (std::vector<std::vector<std::string>
     return outputString;
 }
 
-
 std::string requestHandler::getFilesInFolder (std::string metadata) {
     //expected metadata in the form of "folderID:____"
     
@@ -204,6 +203,47 @@ std::string requestHandler::fileDownload (std::string metadata) {
     return "Download Success!";
 }
 
+std::string requestHandler::deleteFile(std::string metadata) {
+    //metadata framing:name:_____,parentfolder:_____
+
+    size_t pos = metadata.find(':'); 
+
+    std::string name = metadata.substr(pos + 1, metadata.find(',') - (pos+1));
+
+    metadata.erase(0, metadata.find(',')+1);
+
+    pos = metadata.find(':'); 
+    std::string folderID = metadata.substr(pos + 1, metadata.find(',') - (pos+1));
+
+    std::string query = "SELECT id FROM data WHERE parentFolder =" + folderID + " AND name = '" + name + "';";
+    std::vector<std::vector<std::string>> result = pg.sendQuery (query);
+
+    int64_t fileID = std::stoll (result[0][0]);
+    try {    
+        pg.deleteFile(fileID);
+    } catch (...) {
+        return "Deletion failed";
+    }
+
+    return "Deletion Success";
+}
+
+std::string requestHandler::createFolder(std::string metadata) {
+    //metadata framing:name:_____,parentfolder:_____
+    size_t pos = metadata.find(':'); 
+    std::string name = metadata.substr(pos + 1, metadata.find(',') - (pos+1));
+    metadata.erase(0, metadata.find(',')+1);
+    pos = metadata.find(':'); 
+    std::string folderID = metadata.substr(pos + 1, metadata.find(',') - (pos+1));
+
+    try {    
+        pg.insertFolder(name, folderID);
+    } catch (...) {
+        return "Folder Creation failed";
+    }
+
+    return "Folder Creation Success";
+}
 
 void requestHandler::handlePayload(std::vector<std::string> payload) {
     std::string operation = payload[0];
@@ -217,12 +257,16 @@ void requestHandler::handlePayload(std::vector<std::string> payload) {
     } else if (operation == "File Download"){
         std::string result = fileDownload(payload[1]);
         sendMessage ("Result", result);
+    } else if (operation == "Delete File") {
+        std::string result = deleteFile(payload[1]);
+        sendMessage("Result", result);
+    } else if (operation == "Create Folder") {
+        std::string result = createFolder (payload[1]);
+        sendMessage ("Result", result);
     } else {
         sendMessage ("Invalid Operation", "");
     }
-
 }
-
 
 void requestHandler::sendMessage (std::string operation, std::string metadata) {
     std::string message = createMessage(operation, metadata);

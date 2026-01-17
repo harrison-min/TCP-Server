@@ -1,12 +1,13 @@
 #include "openSSLModule.hpp"
 #include "requestSender.hpp"
+#include "clientUI.hpp"
 #include <iostream>
 
 int main() {
     SSLClient myClient;
     requestSender sender (myClient);
-    // sender.uploadData("test/", "test.png", "1");
-    sender.downloadData("target/", "test.png", "1");
+    clientUI ui (sender);
+    ui.run();
     
     return 0;
 }
