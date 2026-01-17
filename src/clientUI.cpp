@@ -3,12 +3,36 @@
 #include <iostream>
 #include <unordered_map>
 
+clientUI::clientUI(requestSender & requestRef) :
+    request (requestRef), exitStatus (false) {
+        initMenuOptions();
+}
+
+clientUI::~clientUI () {
+    std::cerr<< "Goodbye!\n";
+}
+
+void clientUI::initMenuOptions () {
+    mainMenuOptions ["1"] = [this]() {fileDownload(); };
+    mainMenuOptions ["2"] = [this]() {fileUpload(); };
+    mainMenuOptions ["3"] = [this]() {deleteFile(); };
+    mainMenuOptions ["4"] = [this]() {createFolder(); };
+    mainMenuOptions ["5"] = [this]() {openFolder(); };
+    mainMenuOptions ["q"] = [this]() {setExitStatusTrue(); };
+}
+
+// ===========================================================
+// UI functions
+// ===========================================================
+
+
 void clientUI::displayMainMenu() {
     std::cerr<< "MAIN MENU\n" 
     << "1) FILE DOWNLOAD\n" 
     << "2) FILE UPLOAD\n" 
     << "3) DELETE FILE\n"
     << "4) CREATE FOLDER\n"
+    << "5) OPEN FOLDER\n"
     << "q) EXIT PROGRAM\n";
 }
 
@@ -17,12 +41,14 @@ void clientUI::parseInput(std::string input) {
         mainMenuOptions.at(input)();
     } catch (std::out_of_range) {
         std::cerr<< "Input unrecognized, please try again\n";
-    }  
+    } catch (std::runtime_error & error) {
+        std::cerr<< "Operation failed due to runtime error: " << error.what() << "\n";
+    }
 }
 
 void clientUI::run () {
     while (exitStatus == false) {
-        std::cerr << "\033[2J\033[1;1H";
+        //std::cerr << "\033[2J\033[1;1H"; Clears the screen completely
         displayMainMenu();
         std::string input; 
         std::getline (std::cin, input);
@@ -30,13 +56,11 @@ void clientUI::run () {
     }
 } 
 
-void clientUI::initMenuOptions () {
-    mainMenuOptions ["1"] = [this]() {fileDownload(); };
-    mainMenuOptions ["2"] = [this]() {fileUpload(); };
-    mainMenuOptions ["3"] = [this]() {deleteFile(); };
-    mainMenuOptions ["4"] = [this]() {createFolder(); };
-    mainMenuOptions ["q"] = [this]() {setExitStatusTrue(); };
-}
+
+// ===========================================================
+// Operations 
+// ===========================================================
+
 
 void clientUI::createFolder() {
     std::cerr << "You selected create folder!\n";
@@ -80,8 +104,9 @@ void clientUI::fileDownload() {
 
     request.downloadData(destination, name, parentFolder);
 }
+
 void clientUI::fileUpload() {
-    std::cerr<< "You selected file Upload!\n";
+    std::cerr<< "You selected file upload!\n";
     std::cerr << "File Name: ";
     std::string name; 
     std::getline (std::cin, name);
@@ -101,11 +126,11 @@ void clientUI::setExitStatusTrue() {
     exitStatus = true;
 }
 
-clientUI::clientUI(requestSender & requestRef) :
-    request (requestRef), exitStatus (false) {
-        initMenuOptions();
-}
+void clientUI::openFolder() {
+    std::cerr<< "You selected open folder!\n";
+    std::cerr << "Parent Folder ID: ";
+    std::string id; 
+    std::getline (std::cin, id);
 
-clientUI::~clientUI () {
-    std::cerr<< "Goodbye!\n";
+    request.openFolder(id);
 }

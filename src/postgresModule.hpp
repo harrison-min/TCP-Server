@@ -19,7 +19,6 @@ class pgConnection {
         void displayResponse (std::vector <std::vector<std::string>> data);
         void insertFolder (std::string folderName, std::string parentID);
         void deleteFolder(int64_t id);
-        void createNewFile (std::string fileName, std::string filePath, int64_t parentFolderID);
         void deleteFile (int64_t fileID);
         int createNewLargeObject (std::string fileName, std::string parentFolderID, size_t fileSize);
         void writeToLargeObject (std::string & buffer, int loDescriptor);

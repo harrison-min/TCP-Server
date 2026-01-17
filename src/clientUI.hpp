@@ -19,6 +19,7 @@ class clientUI {
         void setExitStatusTrue();
         void deleteFile();
         void createFolder();
+        void openFolder();
         
 
     public:

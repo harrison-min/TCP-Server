@@ -155,62 +155,6 @@ std::string pgConnection::readChunkFromLO (int fd) {
     return std::string{buffer, static_cast<size_t>(bytesRead)};
 }
 
-void pgConnection::createNewFile (std::string fileName, std::string filePath, int64_t parentFolderID) {   
-    PQexec(conn, "BEGIN");
-    try {    
-        Oid newOID = lo_create(conn, InvalidOid);
-        if (newOID == 0) {
-            throw std::runtime_error("Failed to create a new large object");
-        }
-
-        int loDescriptor = lo_open(conn, newOID, INV_WRITE);
-        if (loDescriptor<0) {
-            throw std::runtime_error("Failed to open large object");
-        }
-
-        int64_t fileSize = 0;
-        int bufferSize = 16384;
-        char buffer [bufferSize];
-
-        std::ifstream fs (filePath, std::ios::binary);
-        if (fs.is_open() == false) {
-            throw std::runtime_error("Failed to open filePath");
-        }
-
-        while (true)  {
-            fs.read(buffer, bufferSize);
-            std::streamsize readBytes = fs.gcount();
-            if (readBytes == 0) {
-                break;
-            }
-            fileSize += readBytes;
-
-
-            if (readBytes > 0) {
-                int writtenBytes = lo_write(conn, loDescriptor, buffer, readBytes);
-                if (writtenBytes< 0) {
-                    throw std::runtime_error("Failed to write to Large object");
-                }
-            }
-        }
-
-        fs.close();
-        lo_close(conn, loDescriptor);
-
-        std::string query = "INSERT INTO data (loID, parentFolder, size, name) VALUES (" +
-            std::to_string(newOID) + ", " + std::to_string(parentFolderID) + ", " + 
-            std::to_string(fileSize) + ", '" + fileName + "') RETURNING id;";
-        
-        std::vector<std::vector<std::string>> response = sendQuery(query);
-        displayResponse(response); 
-
-        PQexec(conn, "COMMIT");
-    } catch (...) {
-        PQexec(conn, "ROLLBACK"); 
-        throw;
-    }
-}
-
 void pgConnection::deleteFile (int64_t fileID) {
     std::string query = "SELECT loid FROM data WHERE id = " + std::to_string(fileID) + ";";
 

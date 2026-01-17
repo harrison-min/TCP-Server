@@ -18,12 +18,25 @@ requestHandler::requestHandler(SSLServer &sslRef, pgConnection &pgRef) :
     ssl {sslRef}, pg {pgRef} {
         ssl.write ("Hello from Server!");
         std::cerr<< ssl.read () << std::endl;
+        initOperationsMap();
     }
 
 requestHandler::~requestHandler() {
     //nothing yet to deconstruct
 }
 
+void requestHandler::initOperationsMap() {
+    operationsMap ["Get Files in Folder"] = [this](std::string arg) { return getFilesInFolder(arg); };
+    operationsMap ["File Upload"] =         [this](std::string arg) { return fileUpload(arg); };
+    operationsMap ["File Download"] =       [this](std::string arg) { return fileDownload(arg); };
+    operationsMap ["Delete File"] =         [this](std::string arg) { return deleteFile(arg); };
+    operationsMap ["Create Folder"] =       [this](std::string arg) { return createFolder(arg); };
+    operationsMap ["Open Folder"] =         [this](std::string arg) { return openFolder(arg); };
+}
+
+// ===========================================================
+// Message Handling and Receiving 
+// ===========================================================
 
 std::vector<std::string> requestHandler::receiveMessage() {
     std::string buffer;
@@ -53,6 +66,11 @@ std::vector<std::string> requestHandler::receiveMessage() {
     return {operation, metadata};
 }
 
+void requestHandler::sendMessage (std::string operation, std::string metadata) {
+    std::string message = createMessage(operation, metadata);
+    ssl.write(message);
+}
+
 std::string requestHandler::createMessage(std::string operation, std::string metadata) {
 
     std::string payload = operation + "|" + metadata + "|";
@@ -62,12 +80,13 @@ std::string requestHandler::createMessage(std::string operation, std::string met
 
     return message;
 }
+
 std::string requestHandler::pgDataToString (std::vector<std::vector<std::string>> data) {
     std::string outputString;
     for (size_t i = 0; i <data.size(); i ++) {
         for (size_t j = 0; j < data[i].size(); j ++) {
             outputString += data[i][j];
-            outputString += ", ";
+            outputString += ",";
         }
         
         outputString += "\n";
@@ -76,6 +95,20 @@ std::string requestHandler::pgDataToString (std::vector<std::vector<std::string>
     return outputString;
 }
 
+void requestHandler::handlePayload(std::vector<std::string> payload) {
+    std::string operation = payload[0];
+    std::string metadata = payload[1];
+    try {
+        std::string result = operationsMap.at(operation) (metadata);
+        sendMessage("Result", result);
+    } catch (std::out_of_range) {
+        sendMessage ("Result", "Unrecognized Operation");
+    }
+}
+
+// ===========================================================
+// Operations 
+// ===========================================================
 std::string requestHandler::getFilesInFolder (std::string metadata) {
     //expected metadata in the form of "folderID:____"
     
@@ -176,8 +209,6 @@ std::string requestHandler::fileDownload (std::string metadata) {
 
     size_t fileSize = std::stoull(fileSizeString.c_str());
     size_t totalBytesRead = 0;
-    std::cerr<< "loID: ["+ loID +"]\n";
-
 
     pg.beginPGOperation();
     try {
@@ -245,30 +276,32 @@ std::string requestHandler::createFolder(std::string metadata) {
     return "Folder Creation Success";
 }
 
-void requestHandler::handlePayload(std::vector<std::string> payload) {
-    std::string operation = payload[0];
-
-    if (operation == "Get Files in Folder") {
-        std::string result = getFilesInFolder (payload[1]);
-        sendMessage("Result", result);
-    } else if (operation == "File Upload") {
-        std::string result = fileUpload (payload[1]);
-        sendMessage ("Result", result);
-    } else if (operation == "File Download"){
-        std::string result = fileDownload(payload[1]);
-        sendMessage ("Result", result);
-    } else if (operation == "Delete File") {
-        std::string result = deleteFile(payload[1]);
-        sendMessage("Result", result);
-    } else if (operation == "Create Folder") {
-        std::string result = createFolder (payload[1]);
-        sendMessage ("Result", result);
-    } else {
-        sendMessage ("Invalid Operation", "");
+std::string requestHandler::openFolder (std::string metadata) {
+    //metadata structure: folderID:___
+    size_t pos = metadata.find(':'); 
+    if (pos == std::string::npos) { 
+        return "INVALID METADATA"; 
     }
-}
 
-void requestHandler::sendMessage (std::string operation, std::string metadata) {
-    std::string message = createMessage(operation, metadata);
-    ssl.write(message);
+    std::string folderID = metadata.substr(pos + 1);
+
+    for (auto ch : folderID) {
+        if (std::isdigit(static_cast<unsigned char>(ch)) == false) {
+            return "INVALID METADATA";
+        }
+    }
+
+    std::string folderQuery = "SELECT id, name FROM folder WHERE parentFolder = " + folderID + ";";
+    std::vector<std::vector<std::string>> folderResponse = pg.sendQuery(folderQuery);
+
+    std::string fileQuery = "SELECT id, name FROM data WHERE parentFolder = " + folderID + ";";
+    std::vector<std::vector<std::string>> fileResponse = pg.sendQuery(fileQuery);
+
+
+    //We concatenate the folder response and the file response by separating each field by a comma, each row by a newline
+    // folders and files are separated with a :
+    std::string result = "folders:" + pgDataToString(folderResponse) + "files:" + pgDataToString(fileResponse);
+
+    return result;
+
 }

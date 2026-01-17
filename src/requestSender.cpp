@@ -12,6 +12,19 @@ numberOfPayloadBytes|OperationCode|OperationMetadata|
 ex: 31|Upload|FileSize:1496,name:1234|
 ex: 16|ShowAllFolders||
 */
+requestSender::requestSender(SSLClient & clientRef):
+    ssl{clientRef} {
+        std::cerr << ssl.read() << "\n";
+        ssl.write("Hello from client!");
+}
+
+requestSender::~requestSender() {
+    //nothing to deconstruct yet
+}
+
+// ===========================================================
+// Message Handling and Receiving 
+// ===========================================================
 
 std::string requestSender::createMessage(std::string operation, std::string metadata) {
     std::string delimiter = "|";
@@ -46,7 +59,8 @@ std::vector<std::string> requestSender::receiveMessage() {
     buffer.erase (0, buffer.find(delimiter) + 1);
     std::string metadata = buffer.substr(0, buffer.find(delimiter));
 
-    std::cerr<< "Operation: " + operation << std::endl;
+    // std::cerr<< "Operation: " + operation << std::endl;
+    // std::cerr<< "Metadata: " + metadata << std::endl;
 
     return {operation, metadata};
 }
@@ -55,6 +69,10 @@ void requestSender::sendMessage (std::string operation, std::string metadata) {
     std::string message = createMessage(operation, metadata);
     ssl.write(message);
 }
+
+// ===========================================================
+// Operations 
+// ===========================================================
 
 void requestSender::uploadData (std::string filePath, std::string fileName, std::string targetFolder) {
     //first send the initial message
@@ -145,13 +163,54 @@ void requestSender::createFolder (std::string folderName, std::string parentFold
     std::cerr<< response[1] << "\n";
 }
 
-requestSender::requestSender(SSLClient & clientRef):
-    ssl{clientRef} {
-        std::cerr << ssl.read() << "\n";
-        ssl.write("Hello from client!");
+void requestSender::displayFolderData (std::string data) {
+    //Folder data is expect to be 2 comma separated values with each row separated with a newline
+    size_t start = 0;
+
+    while (true) {
+        size_t end = data.find('\n', start);
+        std::string line = data.substr(start, end-start);
+
+        if (line.empty() == false) {
+            size_t comma = line.find(',');
+            std::string id = line.substr(0, comma);
+            std::string name = line.substr(comma + 1, end );
+
+            std::cerr << "ID number: " << id << " name: " << name << "\n";
+        }
+
+        if (end == std::string::npos){
+            break;
+        }
+        start = end + 1;
+    }
+
 }
 
-requestSender::~requestSender() {
-    //nothing to deconstruct yet
-}
+void requestSender::openFolder (std::string folderID) {
+    sendMessage("Open Folder", "folderID:" + folderID);
 
+    std::vector<std::string> response = receiveMessage();
+    
+    std::string metadata = response[1];
+
+    size_t folderPosition = metadata.find("folders:");
+    size_t filePosition = metadata.find ("files:"); 
+
+    if (folderPosition == std::string::npos || filePosition == std::string::npos) {
+        throw std::runtime_error ("Missing folders: or files: in metadata");
+    }
+
+    size_t folderKeyStart = folderPosition + std::string{"folders:"}.length();
+
+    std::string folderData = metadata.substr(folderKeyStart, filePosition - folderKeyStart);
+    std::string fileData = metadata.substr(filePosition + std::string{"files:"}.length());
+
+    std::cerr<< "\nFOLDERS:\n";
+    displayFolderData(folderData);
+
+    std::cerr<< "\nFILES:\n";
+    displayFolderData(fileData);
+    std::cerr<< "\n";
+
+}
