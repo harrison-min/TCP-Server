@@ -75,9 +75,9 @@ void pgConnection::insertFolder (std::string folderName, std::string parentID) {
 
 }
 
-void pgConnection::deleteFolder(int64_t id) {
+void pgConnection::deleteFolder(std::string id) {
 
-    std::string query = "DELETE FROM folder WHERE id =" + std::to_string(id) +" RETURNING id;";
+    std::string query = "DELETE FROM folder WHERE id =" + id +" RETURNING id;";
 
     std::vector<std::vector<std::string>> response = sendQuery(query);
     displayResponse(response); 

@@ -18,6 +18,7 @@ void clientUI::initMenuOptions () {
     mainMenuOptions ["3"] = [this]() {deleteFile(); };
     mainMenuOptions ["4"] = [this]() {createFolder(); };
     mainMenuOptions ["5"] = [this]() {openFolder(); };
+    mainMenuOptions ["6"] = [this]() {deleteFolder(); };
     mainMenuOptions ["q"] = [this]() {setExitStatusTrue(); };
 }
 
@@ -33,6 +34,7 @@ void clientUI::displayMainMenu() {
     << "3) DELETE FILE\n"
     << "4) CREATE FOLDER\n"
     << "5) OPEN FOLDER\n"
+    << "6) DELETE FOLDER\n"
     << "q) EXIT PROGRAM\n";
 }
 
@@ -133,4 +135,13 @@ void clientUI::openFolder() {
     std::getline (std::cin, id);
 
     request.openFolder(id);
+}
+
+void clientUI::deleteFolder() {
+    std::cerr<< "You selected delete folder!\n";
+    std::cerr << "Folder ID: ";
+    std::string id; 
+    std::getline (std::cin, id);
+
+    request.deleteFolder(id);
 }

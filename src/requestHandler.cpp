@@ -32,6 +32,7 @@ void requestHandler::initOperationsMap() {
     operationsMap ["Delete File"] =         [this](std::string arg) { return deleteFile(arg); };
     operationsMap ["Create Folder"] =       [this](std::string arg) { return createFolder(arg); };
     operationsMap ["Open Folder"] =         [this](std::string arg) { return openFolder(arg); };
+    operationsMap ["Delete Folder"] =       [this](std::string arg) { return deleteFolder(arg); };
 }
 
 // ===========================================================
@@ -274,6 +275,36 @@ std::string requestHandler::createFolder(std::string metadata) {
     }
 
     return "Folder Creation Success";
+}
+
+std::string requestHandler::deleteFolder(std::string metadata) {
+    //metadata structure: folderID:___
+    size_t pos = metadata.find(':'); 
+    if (pos == std::string::npos) { 
+        return "INVALID METADATA"; 
+    }
+
+    std::string folderID = metadata.substr(pos + 1);
+
+    for (auto ch : folderID) {
+        if (std::isdigit(static_cast<unsigned char>(ch)) == false) {
+            return "INVALID METADATA";
+        }
+    }
+
+    std::string query = "SELECT id FROM data WHERE parentFolder = " + folderID + ";";
+
+    std::vector<std::vector<std::string>> response = pg.sendQuery (query);
+
+    for (size_t index = 0; index < response.size(); index ++) {
+        int64_t fileID = std::stoll (response[index][0]);
+        pg.deleteFile(fileID);
+    }
+
+    pg.deleteFolder(folderID);
+
+    return "Deletion Success";
+
 }
 
 std::string requestHandler::openFolder (std::string metadata) {

@@ -19,4 +19,5 @@ class requestSender {
         void deleteFile (std::string fileName, std::string parentFolder);
         void createFolder (std::string folderName, std::string parentFolder);
         void openFolder (std::string folderID);
+        void deleteFolder (std::string folderID);
 };

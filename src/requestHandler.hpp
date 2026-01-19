@@ -25,6 +25,7 @@ class requestHandler {
         std::string createFolder (std::string metadata);
         std::string displayDirectory (std::string metadata);
         std::string openFolder (std::string metadata);
+        std::string deleteFolder(std::string metadata);
     public:
         requestHandler (SSLServer &sslRef, pgConnection &pgRef);
         ~requestHandler ();

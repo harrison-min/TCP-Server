@@ -20,8 +20,8 @@ class clientUI {
         void deleteFile();
         void createFolder();
         void openFolder();
+        void deleteFolder();
         
-
     public:
         void run ();
         clientUI (requestSender & requestRef);

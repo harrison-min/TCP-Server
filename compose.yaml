@@ -29,7 +29,7 @@ services:
         networks: 
             - backEndTest
             - frontEndTest
-    
+
 
 volumes:
     pgdata:

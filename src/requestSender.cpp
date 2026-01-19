@@ -214,3 +214,9 @@ void requestSender::openFolder (std::string folderID) {
     std::cerr<< "\n";
 
 }
+
+void requestSender::deleteFolder (std::string folderID) {
+    sendMessage("Delete Folder", "folderID:" + folderID);
+    std::vector<std::string> response = receiveMessage();
+    std::cerr<< response[1] << "\n";
+}
