@@ -75,7 +75,7 @@ void pgConnection::insertFolder (std::string folderName, std::string parentID) {
 
 }
 
-void pgConnection::deleteFolder(std::string id) {
+void pgConnection::deleteFolderFromTable(std::string id) {
 
     std::string query = "DELETE FROM folder WHERE id =" + id +" RETURNING id;";
 
@@ -155,7 +155,17 @@ std::string pgConnection::readChunkFromLO (int fd) {
     return std::string{buffer, static_cast<size_t>(bytesRead)};
 }
 
+bool pgConnection::isTransactionIdle () {
+    return PQtransactionStatus(conn) == PQTRANS_IDLE;
+}
+
 void pgConnection::deleteFile (int64_t fileID) {
+    bool startedTransaction = false;
+    if (isTransactionIdle () == true) {
+        beginPGOperation();
+        startedTransaction = true;
+    }
+
     std::string query = "SELECT loid FROM data WHERE id = " + std::to_string(fileID) + ";";
 
     std::vector <std::vector<std::string>> response = sendQuery (query);
@@ -165,7 +175,7 @@ void pgConnection::deleteFile (int64_t fileID) {
 
     Oid loID = static_cast<Oid>(std::stoul(response[0][0]));
 
-    PQexec(conn, "BEGIN");
+    
     try {
         int result =  lo_unlink(conn, loID);
         if (result <0) {
@@ -177,10 +187,13 @@ void pgConnection::deleteFile (int64_t fileID) {
         if (response.empty() || response [0].empty()) {
             throw std::runtime_error ("DELETE Response was empty");
         }
-
-        PQexec(conn, "COMMIT");
+        if (startedTransaction == true) {
+            commitPGOperation();
+        }
     } catch (...){
-        PQexec(conn, "ROLLBACK"); 
+        if (startedTransaction == true) {            
+            rollbackPGOperation(); 
+        }
         throw;
     }
 }

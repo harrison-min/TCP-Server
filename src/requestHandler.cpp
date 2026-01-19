@@ -104,6 +104,8 @@ void requestHandler::handlePayload(std::vector<std::string> payload) {
         sendMessage("Result", result);
     } catch (std::out_of_range) {
         sendMessage ("Result", "Unrecognized Operation");
+    } catch (std::runtime_error &err) {
+        sendMessage ("Result", err.what());
     }
 }
 
@@ -292,18 +294,46 @@ std::string requestHandler::deleteFolder(std::string metadata) {
         }
     }
 
-    std::string query = "SELECT id FROM data WHERE parentFolder = " + folderID + ";";
+    bool startedTransaction = false;
 
-    std::vector<std::vector<std::string>> response = pg.sendQuery (query);
-
-    for (size_t index = 0; index < response.size(); index ++) {
-        int64_t fileID = std::stoll (response[index][0]);
-        pg.deleteFile(fileID);
+    if (pg.isTransactionIdle() == true) {
+        pg.beginPGOperation();
+        startedTransaction = true;
     }
 
-    pg.deleteFolder(folderID);
 
-    return "Deletion Success";
+    try {
+        std::string fileQuery = "SELECT id FROM data WHERE parentFolder = " + folderID + ";";
+
+        std::vector<std::vector<std::string>> fileResponse = pg.sendQuery (fileQuery);
+
+        for (size_t index = 0; index < fileResponse.size(); index ++) {
+            int64_t fileID = std::stoll (fileResponse[index][0]);
+            pg.deleteFile(fileID);
+        }
+
+        std::string folderQuery = "SELECT id FROM folder WHERE parentFolder = " + folderID + ";";
+        std::vector<std::vector<std::string>> folderResponse = pg.sendQuery (folderQuery);
+
+        if (folderResponse.empty() == false) {
+            for (size_t index = 0; index < folderResponse.size(); index ++) {
+                deleteFolder("folderID:" + folderResponse[index][0]);
+            }
+        }
+        
+        pg.deleteFolderFromTable(folderID);
+
+        if (startedTransaction == true) {
+            pg.commitPGOperation();
+        }
+
+        return "Deletion Success";
+    } catch (...) {
+        if (startedTransaction == true) {
+            pg.rollbackPGOperation();
+        }
+        throw;
+    }
 
 }
 
