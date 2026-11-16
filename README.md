@@ -2,7 +2,7 @@
 
 A simple file storage system with mutual TLS encryption via OpenSSL and a custom message-passing protocol. Client communicates via mTLS channel to Server which manages the isolated PostgreSQL container.
 
-## Architecture & Features
+## Features
 
 * **OpenSSL Integration:** Client and Server are verified for mTLS with self signed certificates
 * **Custom Message Passing:** Custom message parsing system with simple format: "PayloadBytes|OperationCode|OperationMetadata|".
